@@ -17,21 +17,31 @@ async function waitForCopilot(): Promise<string | undefined> {
   });
 }
 
-let waitForClientCallback: (prompt: string) => void | undefined = undefined;
-async function waitForClient(): Promise<string> {
+let waitForClientCallback: (action: CopilotAction) => void | undefined =
+  undefined;
+async function waitForClient(): Promise<CopilotAction> {
   if (waitForClientCallback) {
     throw new Error("Already waiting for client");
   }
-  return new Promise<string>((resolve) => {
-    waitForClientCallback = (prompt) => {
-      resolve(prompt);
+  return new Promise<CopilotAction>((resolve) => {
+    waitForClientCallback = (action) => {
+      resolve(action);
       waitForClientCallback = undefined;
     };
   });
 }
 
-async function requestCopilotAction(prompt: string): Promise<string> {
-  waitForClientCallback?.(prompt);
+type CopilotAction =
+  | {
+      action: "exit";
+    }
+  | {
+      action: "prompt";
+      prompt: string;
+    };
+
+async function requestCopilotAction(action: CopilotAction): Promise<string> {
+  waitForClientCallback?.(action);
   return await waitForCopilot();
 }
 
@@ -45,7 +55,7 @@ const CopilotConductorSchema = z.object({
     .string()
     .optional()
     .describe(
-      "The requested output, if any. For the first invocation, leave this empty.",
+      "The requested output, if any. For the first invocation, do not fill in this field.",
     ),
 });
 
@@ -66,17 +76,29 @@ mcpServer.tool(
     }
 
     waitForCopilotCallback?.(args.output);
-    const prompt = await waitForClient();
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Follow these instructions exactly: <instructions>\n\n${prompt}\n\n</instructions> and then call the copilot_conductor tool with the result.
+    const action = await waitForClient();
+
+    if (action.action === "prompt") {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Follow these instructions exactly: <instructions>\n\n${action.prompt}\n\n</instructions> and then call the copilot_conductor tool with the result.
         Do not output the result directly, but instead return it as the 'output' field in the next invocation of this tool.
         output "fail" and a short explanation of what went wrong. Do not attempt to fix the problem yourself unless the instructions explicitly say to do so.`,
-        },
-      ],
-    };
+          },
+        ],
+      };
+    } else {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Conductor mode completed successfully. You can now exit.",
+          },
+        ],
+      };
+    }
   },
 );
 
@@ -86,15 +108,13 @@ app.use(express.json());
 app.get("/health", (_, res) => res.status(204).send());
 
 app.post("/copilot", async (req, res) => {
-  const { prompt } = req.body;
-  console.error(
-    `Received request to run Copilot with prompt: ${prompt.substring(100)}...`,
-  );
-  const result = await requestCopilotAction(prompt);
-  console.error(
-    `Filled request to run Copilot with prompt: ${prompt.substring(100)}...`,
-  );
+  const result = await requestCopilotAction({ action: "prompt", prompt: req.body.prompt });
   res.json({ output: result, success: true }).send();
+});
+
+app.post("/exit", async (_, res) => {
+  requestCopilotAction({ action: "exit"});
+  res.json({ success: true }).send();
 });
 
 export async function startServer(): Promise<void> {

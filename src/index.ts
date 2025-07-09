@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env -S npx -y tsx
 
 import { startClient } from "./client.js";
 import { startServer } from "./server.js";

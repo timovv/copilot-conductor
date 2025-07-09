@@ -26,7 +26,6 @@ The conductor program lets you define tasks in natural language Markdown form, w
 
 This folder contains some example tasks.
 
-
 ### `src/`
 
 Contains the source code for the client, server and the compile task tool.

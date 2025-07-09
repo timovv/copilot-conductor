@@ -84,13 +84,23 @@ export async function startClient() {
       choices,
     });
     if (selectedTask === "__exit__") {
-      console.log("Goodbye");
+      spinner.start("Ending session");
+      await fetch("http://localhost:4001/exit", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      spinner.succeed("Session ended -- goodbye!");
+
       process.exit(0);
     }
 
     const task =
       selectedTask === "__compile__" ? runCompile : modules[selectedTask];
     await task(context);
-    console.log(`Task ${selectedTask} completed.`);
+    spinner.succeed(`Task ${selectedTask} completed.`);
   }
 }
