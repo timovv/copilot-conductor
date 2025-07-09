@@ -1,0 +1,43 @@
+{
+  "name": "copilot-conductor",
+  "version": "0.1.0",
+  "description": "A CLI MCP server that helps direct Copilot (and other AI agents) to perform tasks",
+  "type": "module",
+  "bin": {
+    "copilot-conductor": "src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "start:inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts",
+    "build": "tsc -p .",
+    "format": "prettier --write src/"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@azure/logger": "^1.0.0",
+    "@inquirer/prompts": "~7.6.0",
+    "@modelcontextprotocol/sdk": "^1.8.0",
+    "express": "^5.1.0",
+    "ora": "~8.2.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-istanbul": "^3.0.9",
+    "@vitest/expect": "^3.0.9",
+    "dotenv": "^16.0.0",
+    "eslint": "^9.9.0",
+    "prettier": "^3.6.2",
+    "tsx": "4.19.3",
+    "typescript": "~5.8.2",
+    "vitest": "^3.0.9"
+  }
+}
