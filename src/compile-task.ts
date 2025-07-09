@@ -3,7 +3,7 @@
 
 import { readFile, writeFile, readdir } from "node:fs/promises";
 import { select } from "@inquirer/prompts";
-import { basename } from "node:path";
+import path from "node:path";
 
 export interface TaskContext {
   /**
@@ -14,12 +14,14 @@ export interface TaskContext {
    * @param prompt - The prompt to send to Copilot.
    * @return - The response from Copilot as a string.
    */
-  requestCopilotAction(prompt: string): Promise<string>;
+  requestCopilotAction(prompt: string, reason?: string): Promise<string>;
+  reportStatus(status?: string): void;
 }
 
-export async function run(context: TaskContext): Promise<void> {
+export async function runCompile(context: TaskContext): Promise<void> {
   // Read available task files
-  const promptFiles = await readdir("tasks");
+  const root = process.cwd();
+  const promptFiles = await readdir(`${root}/.conductor/tasks`);
   const markdownFiles = promptFiles.filter((file) => file.endsWith(".md"));
 
   if (markdownFiles.length === 0) {
@@ -36,10 +38,14 @@ export async function run(context: TaskContext): Promise<void> {
     })),
   });
 
-  const content = await readFile(`prompts/${filename}`, "utf-8");
-  const outputFilename = basename(filename, ".md") + ".ts";
+  const content = await readFile(
+    `${root}/.conductor/tasks/${filename}`,
+    "utf-8",
+  );
+  const outputFilename = path.basename(filename, ".md") + ".ts";
 
-  const typescript = await context.requestCopilotAction(`
+  const typescript = await context.requestCopilotAction(
+    `
 Convert the input Markdown steps into an async TypeScript function that performs them.
 
 The function should be named 'run' and return Promise<void>. It takes a single parameter 'context' which has the following properties and is defined above the function definition:
@@ -64,10 +70,18 @@ export interface TaskContext {
    * @return - The response from Copilot as a string.
    */
   requestCopilotAction(prompt: string, reason?: string): Promise<string>;
+
+  /**
+   * A re-export of all prompts in the @inquirer/prompts package.
+   * Use this to request user input.
+   * 
+   * e.g. await inquirerPrompts.input({ message: "Enter your name" });
+   */
+  inquirerPrompts: any;
 }
 \`\`\`
 
-Any inputs should be requested from the user instead of being made function parameters using the @inquirer/prompts library. The function should not take any parameters other than 'context'.
+Any inputs should be requested from the user instead of being made function parameters using the prompts made available by the context. The function should not take any parameters other than 'context'.
 NEVER use any other third-party libraries or frameworks. Node builtins are acceptable. Prefer async versions where available.
 When running terminal commands, use the 'context.requestCopilotAction' method to run them. Do not use 'child_process' or similar libraries directly. Same with updating files. Be as specific as possible in the prompts to Copilot.
 Both the function run and the TaskContext interface should be exported from the module.
@@ -77,7 +91,15 @@ The instructions follow:
 <instructionContent>
 ${content.trim()}
 </instructionContent>
-  `);
+  `,
+    "Compiling the task",
+  );
 
-  await writeFile(`src/tasks/${outputFilename}`, typescript, "utf-8");
+  await writeFile(
+    `${root}/.conductor/compiled/${outputFilename}`,
+    typescript,
+    "utf-8",
+  );
+  context.reportStatus();
+  console.log(`Compiled ${filename} to ${outputFilename}`);
 }

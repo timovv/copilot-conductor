@@ -10,9 +10,11 @@ Conductor scripts, through the CLI harness, are able to interface with Copilot o
 - Agents are unreliable at following a series of steps. By inverting the control, the conductor program only invokes Copilot when necessary, and only feeds Copilot one step at a time. This means that it is no longer Copilot's responsibility to follow the steps, increasing reliability massively.
 - Agents have a limited context window. Providing a long set of instructions to the agent can be problematic, leading to the agent forgetting earlier instructions and going in circles or on tangents. Since the conductor program takes care of orchestrating the steps, the instructions provided to Copilot for each specific subtask can be richer and more detailed, improving the quality of the output.
 
-### Conductor scripts
+### Conductor tasks
 
-Each workflow is implemented as a "conductor script", which are generally "compiled" from a Markdown file describing the workflow. Conductor scripts are able to request Copilot perform tasks (e.g. update a file or run a terminal command), so they still have access to the full power of the LLM when useful. They are also able to ask the user for input.
+Each workflow is implemented as a "conductor task", which are generally "compiled" from a Markdown file describing the workflow. Conductor tasks are able to request Copilot perform subtasks (e.g. update a file or run a terminal command), so they still have access to the full power of the LLM when useful. They are also able to ask the user for input.
+
+Uncompiled Markdown scripts are located in `.conductor/tasks`, while their compiled equivalents are in `.conductor/scripts`, relative to the project root.
 
 ### Prompt compilation
 
@@ -22,38 +24,34 @@ The conductor program lets you define tasks in natural language Markdown form, w
 
 ### `tasks/`
 
-This folder contains Markdown descriptions of workflows to be automated with the help of Copilot. Workflows can be compiled into TypeScript using the `compile-task` option when running the CLI. Once compiled,
+This folder contains some example tasks.
 
 
-### `src/tasks`
+### `src/`
 
-This folder contains the compiled tasks once they're compiled using the tool.
+Contains the source code for the client, server and the compile task tool.
 
 ## Getting started
 
-Install all dependencies:
+Install all dependencies and link to your environment:
 
 ```bash
 npm i
-```
-Then, start the CLI with
-
-```bash
-npm run start
+npm link
 ```
 
-The conductor program will listen on TCP port 4001 for a connection (I couldn't be bothered trying to get HTTP transport to work but this is a TODO); add the server to your project's `mcp.json`:
+Add the server to your project's `mcp.json`:
 
 ```jsonc
 {
   "servers": {
-    "shepherd": {
+    "conductor": {
       "type": "stdio",
-      "command": "curl", // or netcat/nc if this doesn't work
-      "args": ["telnet://localhost:4001"] // (if using netcat/nc, `["localhost", "4001"]`)
+      "command": "copilot-conductor",
+      "cwd": "${workspaceFolder}" // (or wherever the .conductor folder with your scripts lies)
     }
   }
 }
 ```
 
-Then, tell Copilot (in the chat window) to call the `copilot_conductor` tool and you should be ready to go. Interact with the CLI to get things moving, and hit Continue when asked in the chat window.
+Then, tell Copilot (in the chat window) to "enter conductor mode" and it will kick off the client in the background for you. You can interact with the UI to start and compile tasks.
