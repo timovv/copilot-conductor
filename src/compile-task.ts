@@ -21,7 +21,7 @@ export interface TaskContext {
 export async function runCompile(context: TaskContext): Promise<void> {
   // Read available task files
   const root = process.cwd();
-  const promptFiles = await readdir(`${root}/.conductor/tasks`);
+  const promptFiles = await readdir(path.join(root, '.conductor', 'tasks'));
   const markdownFiles = promptFiles.filter((file) => file.endsWith(".md"));
 
   if (markdownFiles.length === 0) {
@@ -39,7 +39,7 @@ export async function runCompile(context: TaskContext): Promise<void> {
   });
 
   const content = await readFile(
-    `${root}/.conductor/tasks/${filename}`,
+    path.join(root, '.conductor', 'tasks', filename),
     "utf-8",
   );
   const outputFilename = path.basename(filename, ".md") + ".ts";
@@ -96,7 +96,7 @@ ${content.trim()}
   );
 
   await writeFile(
-    `${root}/.conductor/compiled/${outputFilename}`,
+    path.join(root, '.conductor', 'compiled', outputFilename),
     typescript,
     "utf-8",
   );

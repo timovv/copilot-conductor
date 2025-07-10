@@ -1,7 +1,9 @@
 import ora from "ora";
 import * as inquirerPrompts from "@inquirer/prompts";
 import fs from "fs/promises";
+import path from "path";
 import { runCompile } from "./compile-task.js";
+import { require } from "tsx/cjs/api";
 
 const spinner = ora();
 
@@ -19,8 +21,8 @@ export async function startClient() {
 
   spinner.succeed("MCP server connected");
 
-  await fs.mkdir(`./.conductor/tasks`, { recursive: true });
-  await fs.mkdir(`./.conductor/compiled`, { recursive: true });
+  await fs.mkdir(path.join(".", ".conductor", "tasks"), { recursive: true });
+  await fs.mkdir(path.join(".", ".conductor", "compiled"), { recursive: true });
 
   const context = {
     requestUserInput: async (prompt: string): Promise<string> => {
@@ -56,12 +58,13 @@ export async function startClient() {
     const modules: Record<string, (ctx: typeof context) => Promise<void>> = {};
 
     const root = process.cwd();
-    const promptFiles = await fs.readdir(`${root}/.conductor/compiled`);
+    const promptFiles = await fs.readdir(path.join(root, ".conductor", "compiled"));
     for (const filename of promptFiles) {
       if (filename.endsWith(".js") || filename.endsWith(".ts")) {
         const moduleName = filename.slice(0, -3);
-        const module = await import(
-          `${root}/.conductor/compiled/${moduleName}.js`
+        const module = require(
+          path.join(root, ".conductor", "compiled", moduleName),
+          import.meta.url,
         );
         if (module.run && typeof module.run === "function") {
           modules[moduleName] = module.run;

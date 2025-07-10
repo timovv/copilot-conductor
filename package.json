@@ -4,12 +4,12 @@
   "description": "A CLI MCP server that helps direct Copilot (and other AI agents) to perform tasks",
   "type": "module",
   "bin": {
-    "copilot-conductor": "src/index.ts"
+    "copilot-conductor": "dist/index.js"
   },
   "scripts": {
     "start": "tsx src/index.ts",
     "start:inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts",
-    "build": "echo skipped",
+    "build": "tsc -p .",
     "format": "prettier --write src/"
   },
   "files": [

@@ -32,10 +32,11 @@ Contains the source code for the client, server and the compile task tool.
 
 ## Getting started
 
-Install all dependencies and link to your environment:
+Install all dependencies, build, and link to your environment:
 
 ```bash
-npm i
+npm install
+npm run build
 npm link
 ```
 

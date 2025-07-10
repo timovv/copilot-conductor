@@ -2,7 +2,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import express from "express";
 import z from "zod";
-import fs from "fs/promises";
 
 let waitForCopilotCallback: ((output?: string) => void) | undefined = undefined;
 async function waitForCopilot(): Promise<string | undefined> {
